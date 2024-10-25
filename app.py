@@ -150,6 +150,7 @@ def convert_audio():
             'preferredcodec': 'mp3',
             'preferredquality': '320',
         }],
+        'verbose': True,  # 자세한 로그 출력
     }
 
     # 다운로드 수행
