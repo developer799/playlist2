@@ -1,0 +1,16 @@
+# Python 3.9 이미지 기반
+FROM python:3.9
+
+# FFmpeg 설치
+RUN apt-get update && \
+    apt-get install -y ffmpeg
+
+# 애플리케이션 파일 복사
+COPY . /app
+WORKDIR /app
+
+# Python 패키지 설치
+RUN pip install -r requirements.txt
+
+# 컨테이너 시작 시 실행할 명령어
+CMD ["python", "app.py"]

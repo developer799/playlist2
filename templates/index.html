@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MP3 변환기</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            display: flex;
+            max-width: 1000px;
+            width: 100%;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-container {
+            padding: 20px;
+            flex: 1;
+        }
+        .playlist-container {
+            padding: 20px;
+            width: 300px;
+            border-left: 1px solid #ddd;
+            position: relative;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        h2 {
+            margin-top: 30px;
+            font-size: 1.5rem;
+        }
+        input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #f4f4f4;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        li:hover {
+            background-color: #e0e0e0;
+        }
+        audio {
+            margin-top: 20px;
+            width: 100%;
+            display: block;
+        }
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #777;
+        }
+        .button-container {
+            margin-top: 20px;
+        }
+        .button-container button {
+            margin-bottom: 10px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        /* 로그인 및 회원가입 폼 */
+        #login-form, #register-form {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-radius: 10px;
+            z-index: 1000;
+        }
+        #login-form h2, #register-form h2 {
+            text-align: center;
+            color: #333;
+        }
+        #login-form input[type="text"], #login-form input[type="password"],
+        #register-form input[type="text"], #register-form input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #login-form button, #register-form button {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        #login-form button:hover, #register-form button:hover {
+            background-color: #45a049;
+        }
+        #login-btn, #register-btn {
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+        #add-playlist-btn {
+            position: absolute;
+            bottom: 30px;
+            width: 89%;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay"></div>
+
+    <!-- 로그인 폼 -->
+    <div id="login-form">
+        <h2>로그인</h2>
+        <input type="text" id="login-username" placeholder="아이디">
+        <input type="password" id="login-password" placeholder="비밀번호">
+        <button onclick="login()">로그인</button>
+        <button onclick="showRegisterForm()">회원가입</button>
+    </div>
+
+    <!-- 회원가입 폼 -->
+    <div id="register-form">
+        <h2>회원가입</h2>
+        <input type="text" id="register-username" placeholder="아이디">
+        <input type="password" id="register-password" placeholder="비밀번호">
+        <button onclick="register()">회원가입</button>
+        <button onclick="showLoginForm()">로그인으로 돌아가기</button>
+    </div>
+
+    <!-- 플레이리스트 생성 모달 -->
+    <div id="playlist-modal" class="modal">
+        <div class="modal-content">
+            <h2>새 플레이리스트 생성</h2>
+            <input type="text" id="new-playlist-name" placeholder="플레이리스트 이름">
+            <button onclick="createPlaylist()">생성</button>
+            <button onclick="closeModal()">취소</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <h1>MP3 변환기</h1>
+            <h2>URL 입력</h2>
+            <input type="text" id="url-input" placeholder="동영상 URL 입력">
+            <h2>플레이리스트 선택</h2>
+            <select id="playlist-selection"></select>
+            <h2>변환된 파일 이름</h2>
+            <input type="text" id="audio-name-input" placeholder="오디오 파일 이름 (확장자 제외)">
+            <div class="button-container">
+                <button onclick="convert()">MP3로 변환</button>
+                <button onclick="loadPlaylists()">플레이리스트</button>
+            </div>
+        </div>
+        <div class="playlist-container">
+            
+            
+            <!-- 로그인 및 회원가입 버튼 -->
+            <button id="login-btn" onclick="showLoginForm()">로그인</button>
+            <button id="register-btn" onclick="showRegisterForm()">회원가입</button>
+            
+            <ul id="playlist-list">
+                <h3>플레이리스트를 불러오세요.</h3>
+            </ul>
+
+            <!-- 플레이리스트 추가 버튼 -->
+            <button id="add-playlist-btn" onclick="showPlaylistModal()">+ 플레이리스트 추가</button>
+            
+            <audio id="audio-player" controls style="display:none;"></audio>
+        </div>
+    </div>
+
+    <script>
+        let currentPlaylist = [];
+        let currentSongIndex = 0;
+
+        // 플레이리스트 생성 모달 열기
+        function showPlaylistModal() {
+            document.getElementById('playlist-modal').style.display = 'block';
+        }
+
+        // 플레이리스트 생성 모달 닫기
+        function closeModal() {
+            document.getElementById('playlist-modal').style.display = 'none';
+        }
+
+        // 새 플레이리스트 생성
+        function createPlaylist() {
+            const playlistName = document.getElementById('new-playlist-name').value;
+            if (!playlistName) {
+                alert('플레이리스트 이름을 입력하세요.');
+                return;
+            }
+
+            // 서버로 플레이리스트 생성 요청 보내기
+            fetch('/create-playlist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ playlist_name: playlistName }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('플레이리스트 생성 완료');
+                    loadPlaylists();
+                    closeModal();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function convert() {
+            const url = document.getElementById('url-input').value;
+            const playlistName = document.getElementById('playlist-selection').value;
+            const audioName = document.getElementById('audio-name-input').value;
+
+            if (!url || !playlistName || !audioName) {
+                alert('모든 필드를 입력하세요.');
+                return;
+            }
+
+            fetch('/convert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    url: url,
+                    playlist_name: playlistName,
+                    audio_name: audioName
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('MP3로 변환이 완료되었습니다.');
+                    loadPlaylists();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function loadPlaylists() {
+            fetch('/playlists')
+            .then(response => response.json())
+            .then(data => {
+                const list = document.getElementById('playlist-list');
+                const selection = document.getElementById('playlist-selection');
+                list.innerHTML = '';
+                selection.innerHTML = '';
+
+                Object.keys(data).forEach(playlistName => {
+                    const li = document.createElement('li');
+                    li.innerText = playlistName;
+                    li.onclick = () => displaySongs(playlistName, data[playlistName]);
+                    list.appendChild(li);
+
+                    const option = document.createElement('option');
+                    option.value = playlistName;
+                    option.text = playlistName;
+                    selection.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function playSong(song) {
+            const audioPlayer = document.getElementById('audio-player');
+            audioPlayer.src = `/audio/${song}`;
+            audioPlayer.style.display = 'block';
+            audioPlayer.play();
+        }
+
+        function playNextSong() {
+            currentSongIndex++;
+            if (currentSongIndex >= currentPlaylist.length) {
+                currentSongIndex = 0;
+            }
+            playSong(currentPlaylist[currentSongIndex]);
+        }
+
+        document.getElementById('audio-player').addEventListener('ended', function() {
+            playNextSong();
+        });
+
+        function displaySongs(playlistName, songs) {
+            const list = document.getElementById('playlist-list');
+            list.innerHTML = `<h3>${playlistName} 플레이리스트</h3>`;
+            
+            currentPlaylist = songs;
+            currentSongIndex = 0;
+
+            songs.forEach((song, index) => {
+                const li = document.createElement('li');
+                li.innerText = song;
+                li.onclick = () => {
+                    currentSongIndex = index;
+                    playSong(song);
+                };
+                list.appendChild(li);
+            });
+
+            if (songs.length > 0) {
+                playSong(songs[currentSongIndex]);
+            }
+        }
+
+        function showLoginForm() {
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function showRegisterForm() {
+            document.getElementById('register-form').style.display = 'block';
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('로그인 성공!');
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('overlay').style.display = 'none';
+                    document.getElementById('login-btn').style.display = 'none';
+                    document.getElementById('register-btn').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function register() {
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+
+            fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('회원가입 성공!');
+                    document.getElementById('register-form').style.display = 'none';
+                    document.getElementById('overlay').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/check-login')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.logged_in) {
+                        document.getElementById('login-btn').style.display = 'none';
+                        document.getElementById('register-btn').style.display = 'none';
+                    }
+                });
+        });
+    </script>
+</body>
+</html>
