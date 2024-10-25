@@ -150,7 +150,7 @@ def convert_audio():
             'preferredcodec': 'mp3',
             'preferredquality': '320',
         }],
-        'nocheckcertificate': True,  # 인증서 무시
+        'extractor-args': 'youtube:player_client=web',  # 웹 클라이언트 사용 강제
     }
 
     # 다운로드 수행
